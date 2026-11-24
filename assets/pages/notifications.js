@@ -1,11 +1,13 @@
-import { html, mount, renderShell, sb, requireRole, fmtDateTime, appLink, setMeta, pageError, dbMessage, $ } from "../core.js";
+import { html, mount, renderShell, sb, requireRole, fmtDateTime, appLink, homeFor, setMeta, pageError, dbMessage, $ } from "../core.js";
+
+let home = "portal.html";
 
 async function load() {
   const { data, error } = await sb.from("notifications").select("id, title, message, link_path, read_at, created_at").order("created_at", { ascending: false }).limit(100);
   if (error) throw error;
   const unread = data.some((n) => !n.read_at);
   mount("#main", html`<div class="wrap section">
-    <p class="small"><a class="link" href="portal.html">My bookings</a></p>
+    <p class="small"><a class="link" href="${home}">Back to my area</a></p>
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:1rem;border-bottom:1px solid var(--line);padding-bottom:1.25rem;margin:1rem 0 2rem">
       <h1 style="font-size:2.75rem">Notifications</h1>${unread ? html`<button class="btn btn-line btn-sm" id="readall" type="button">Mark all as read</button>` : ""}</div>
     <p id="err" class="alert" hidden></p>
@@ -21,7 +23,8 @@ async function load() {
   });
 }
 try {
-  await requireRole(["customer"]);
+  const me = await requireRole(["customer", "photographer", "videographer", "manager", "super_admin"]);
+  home = homeFor(me.role);
   await renderShell();
   setMeta("Notifications");
   await load();
